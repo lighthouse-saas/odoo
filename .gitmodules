@@ -30,3 +30,19 @@
 	path = custom/oca/account-financial-reporting
 	url = https://github.com/OCA/account-financial-reporting.git
 	branch = 18.0
+[submodule "payroll"]
+	path = custom/oca/payroll
+	url = https://github.com/OCA/payroll.git
+	branch = 18.0
+[submodule "hr-expense"]
+	path = custom/oca/hr-expense
+	url = https://github.com/OCA/hr-expense.git
+	branch = 18.0
+[submodule "hr-attendance"]
+	path = custom/oca/hr-attendance
+	url = https://github.com/OCA/hr-attendance.git
+	branch = 18.0
+[submodule "hr-holidays"]
+	path = custom/oca/hr-holidays
+	url = https://github.com/OCA/hr-holidays.git
+	branch = 18.0
