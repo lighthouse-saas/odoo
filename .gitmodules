@@ -1,4 +1,0 @@
-[submodule "custom/oca/hr"]
-	path = custom/oca/hr
-	url = https://github.com/OCA/hr.git
-	branch = 18.0
