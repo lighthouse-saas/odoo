@@ -11,13 +11,14 @@
 # Larissa Manderfeld, 2025
 #
 # "Larissa Manderfeld (lman)" <lman@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2026.
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-05 18:40+0000\n"
-"PO-Revision-Date: 2025-09-12 14:12+0000\n"
-"Last-Translator: \"Larissa Manderfeld (lman)\" <lman@odoo.com>\n"
+"POT-Creation-Date: 2026-02-05 18:38+0000\n"
+"PO-Revision-Date: 2026-02-14 09:15+0000\n"
+"Last-Translator: Weblate <noreply-mt-weblate@weblate.org>\n"
 "Language-Team: Spanish <https://translate.odoo.com/projects/odoo-18/"
 "spreadsheet/es/>\n"
 "Language: es\n"
@@ -26,7 +27,7 @@ msgstr ""
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n != 0 && n % 1000000 == 0)"
 " ? 1 : 2);\n"
-"X-Generator: Weblate 5.12.2\n"
+"X-Generator: Weblate 5.14.3\n"
 
 #. module: spreadsheet
 #. odoo-javascript
@@ -611,6 +612,12 @@ msgstr "Valor absoluto"
 #: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
 msgid "Absolute value of a number."
 msgstr "Valor absoluto de un número."
+
+#. module: spreadsheet
+#. odoo-javascript
+#: code:addons/spreadsheet/static/src/actions/spreadsheet_download_action.js:0
+msgid "Access Error"
+msgstr "Error de acceso"
 
 #. module: spreadsheet
 #. odoo-javascript
@@ -2020,6 +2027,12 @@ msgstr "Compara dos valores numéricos y devuelve 1 si son iguales."
 
 #. module: spreadsheet
 #. odoo-javascript
+#: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.xml:0
+msgid "Compute from totals"
+msgstr "Calcular a partir de los totales"
+
+#. module: spreadsheet
+#. odoo-javascript
 #: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
 msgid "Compute the Matthews correlation coefficient of a dataset."
 msgstr ""
@@ -3155,8 +3168,6 @@ msgid "Doughnut"
 msgstr "Doughnut"
 
 #. module: spreadsheet
-#. odoo-javascript
-#: code:addons/spreadsheet/static/src/public_readonly_app/public_readonly.js:0
 #: model_terms:ir.ui.view,arch_db:spreadsheet.public_spreadsheet_layout
 msgid "Download"
 msgstr "Descargar"
@@ -3725,10 +3736,30 @@ msgstr ""
 #. module: spreadsheet
 #. odoo-javascript
 #: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
-msgid "Function [[FUNCTION_NAME]] expects number values for %s, but got a %s."
+msgid ""
+"Function [[FUNCTION_NAME]] expects number values for %s, but got a boolean."
 msgstr ""
-"La función [[FUNCTION_NAME]] espera valores numéricos para %s pero recibió "
-"%s."
+"La función [[FUNCTION_NAME]] espera valores numéricos para %s, pero ha "
+"recibido un valor booleano."
+
+#. module: spreadsheet
+#. odoo-javascript
+#: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
+msgid ""
+"Function [[FUNCTION_NAME]] expects number values for %s, but got a string."
+msgstr ""
+"La función [[FUNCTION_NAME]] espera valores numéricos para %s, pero ha "
+"recibido una cadena."
+
+#. module: spreadsheet
+#. odoo-javascript
+#: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
+msgid ""
+"Function [[FUNCTION_NAME]] expects number values for %s, but got an empty "
+"value."
+msgstr ""
+"La función [[FUNCTION_NAME]] espera valores numéricos para %s, pero ha "
+"obtenido un valor vacío."
 
 #. module: spreadsheet
 #. odoo-javascript
@@ -8601,7 +8632,7 @@ msgstr "El punto máximo debe ser un número"
 
 #. module: spreadsheet
 #. odoo-javascript
-#: code:addons/spreadsheet/static/src/chart/odoo_menu/figure_component.js:0
+#: code:addons/spreadsheet/static/src/helpers/helpers.js:0
 msgid ""
 "The menu linked to this chart doesn't have an corresponding action. Please "
 "link the chart to another menu."
@@ -11156,12 +11187,8 @@ msgstr "Cambio de valor del valor clave"
 #. module: spreadsheet
 #. odoo-javascript
 #: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
-msgid ""
-"Value for parameter %d is missing, while the function [[FUNCTION_NAME]] "
-"expect a number or a range."
+msgid "Value for parameter %s is missing in [[FUNCTION_NAME]]."
 msgstr ""
-"Falta el valor para el parámetro %d. La función [[FUNCTION_NAME]] espera un "
-"número o un rango."
 
 #. module: spreadsheet
 #. odoo-javascript
@@ -11727,6 +11754,14 @@ msgstr "No puede crear tablas superpuestas."
 
 #. module: spreadsheet
 #. odoo-javascript
+#: code:addons/spreadsheet/static/src/actions/spreadsheet_download_action.js:0
+msgid ""
+"You don't have the rights to export data. Please contact an Administrator."
+msgstr ""
+"No tiene permisos para exportar información. Hable con un administrador."
+
+#. module: spreadsheet
+#. odoo-javascript
 #: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
 msgid "[[FUNCTION_NAME]] evaluates to an out of bounds range."
 msgstr "[[NOMBRE_FUNCIÓN]] evalúa un rango fuera de los límites."
@@ -11756,8 +11791,8 @@ msgid ""
 "[[FUNCTION_NAME]] expects the provided values of %(argName)s to be a non-"
 "empty matrix."
 msgstr ""
-"La función [[FUNCTION_NAME]] espera que los valores proporcionados de "
-"%(argName)s sean una matriz que no está vacía."
+"La función [[FUNCTION_NAME]] espera que los valores proporcionados de %"
+"(argName)s sean una matriz que no está vacía."
 
 #. module: spreadsheet
 #. odoo-javascript
@@ -12010,6 +12045,19 @@ msgstr "ayer"
 #: code:addons/spreadsheet/static/src/o_spreadsheet/o_spreadsheet.js:0
 msgid "zero"
 msgstr "cero"
+
+#~ msgid ""
+#~ "Function [[FUNCTION_NAME]] expects number values for %s, but got a %s."
+#~ msgstr ""
+#~ "La función [[FUNCTION_NAME]] espera valores numéricos para %s pero "
+#~ "recibió %s."
+
+#~ msgid ""
+#~ "Value for parameter %d is missing, while the function [[FUNCTION_NAME]] "
+#~ "expect a number or a range."
+#~ msgstr ""
+#~ "Falta el valor para el parámetro %d. La función [[FUNCTION_NAME]] espera "
+#~ "un número o un rango."
 
 #~ msgid "Cannot multiply matrices : incompatible matrices size."
 #~ msgstr "No es posible multiplicar matrices, su tamaño no es compatible."

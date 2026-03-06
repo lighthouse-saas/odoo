@@ -24,7 +24,8 @@ import { getViewPortHeight, getViewPortWidth } from "../mock/window";
 // Global
 //-----------------------------------------------------------------------------
 
-const { customElements, document, getSelection, HTMLElement, Promise, WeakSet } = globalThis;
+const { customElements, document, getSelection, HTMLElement, MutationObserver, Promise, WeakSet } =
+    globalThis;
 
 //-----------------------------------------------------------------------------
 // Internal
@@ -75,7 +76,7 @@ export function makeFixtureManager(runner) {
 
     function getFixture() {
         if (!allowFixture) {
-            throw new HootError(`Cannot access fixture outside of a test.`);
+            throw new HootError(`cannot access fixture outside of a test.`);
         }
         if (!currentFixture) {
             // Prepare fixture once to not force layouts/reflows

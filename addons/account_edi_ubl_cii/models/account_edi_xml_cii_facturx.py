@@ -32,6 +32,8 @@ class AccountEdiXmlCII(models.AbstractModel):
         return super()._find_value(xpath, tree, CII_NAMESPACES)
 
     def _export_invoice_filename(self, invoice):
+        if invoice.commercial_partner_id.country_code == 'DE':
+            return f"{invoice.name.replace('/', '_')}_zugferd.xml"
         return f"{invoice.name.replace('/', '_')}_factur_x.xml"
 
     def _export_invoice_ecosio_schematrons(self):
@@ -192,8 +194,13 @@ class AccountEdiXmlCII(models.AbstractModel):
             'purchase_order_reference': invoice.purchase_order_reference if 'purchase_order_reference' in invoice._fields
                 and invoice.purchase_order_reference else invoice.ref or invoice.name,
             'contract_reference': invoice.contract_reference if 'contract_reference' in invoice._fields and invoice.contract_reference else '',
-            'document_context_id': "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended",
         }
+
+        # Change the document context based on the country of the partner, the default value is France (factur-X)
+        if invoice.commercial_partner_id.country_code == 'DE':
+            template_values['document_context_id'] = "urn:cen.eu:en16931:2017#conformant#urn:zugferd.de:2p2:extended"
+        else:
+            template_values['document_context_id'] = "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended"
 
         # data used for IncludedSupplyChainTradeLineItem / SpecifiedLineTradeSettlement
         for line_vals in template_values['invoice_line_vals_list']:
@@ -252,7 +259,7 @@ class AccountEdiXmlCII(models.AbstractModel):
         template_values['tax_basis_total_amount'] = tax_details['base_amount_currency']
         template_values['tax_total_amount'] = tax_details['tax_amount_currency']
 
-        if self.env['account.payment']._fields.get('sdd_mandate_id') and invoice.matched_payment_ids.sdd_mandate_id:
+        if self.env['account.payment']._fields.get('sdd_mandate_id') and invoice.reconciled_payment_ids.sdd_mandate_id:
             template_values['payment_means_code'] = PAYMENT_MEAN_CODES['SEPA direct debit']
         else:
             template_values['payment_means_code'] = PAYMENT_MEAN_CODES['Payment to bank account']
@@ -295,6 +302,8 @@ class AccountEdiXmlCII(models.AbstractModel):
             bank_detail_node.findtext('{*}PayeePartyCreditorFinancialAccount/{*}IBANID')
             or bank_detail_node.findtext('{*}PayeePartyCreditorFinancialAccount/{*}ProprietaryID')
             for bank_detail_node in bank_detail_nodes
+            if bank_detail_node.findtext('{*}PayeePartyCreditorFinancialAccount/{*}IBANID')
+            or bank_detail_node.findtext('{*}PayeePartyCreditorFinancialAccount/{*}ProprietaryID')
         ]
         if bank_details:
             self._import_partner_bank(invoice, bank_details=bank_details)
@@ -374,6 +383,7 @@ class AccountEdiXmlCII(models.AbstractModel):
             'allowance_charge_reason_code': './{*}ReasonCode',
             'line_total_amount': './{*}SpecifiedLineTradeSettlement/{*}SpecifiedTradeSettlementLineMonetarySummation/{*}LineTotalAmount',
             'name': [
+                './ram:SpecifiedTradeProduct/ram:Description',
                 './ram:SpecifiedTradeProduct/ram:Name',
             ],
             'product': {

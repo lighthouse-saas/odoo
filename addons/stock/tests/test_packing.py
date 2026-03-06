@@ -42,31 +42,23 @@ class TestPacking(TestPackingCommon):
         """
         self.env['stock.quant']._update_available_quantity(self.productA, self.stock_location, 20.0)
         self.env['stock.quant']._update_available_quantity(self.productB, self.stock_location, 20.0)
-        pick_move_a = self.env['stock.move'].create({
+        picking = self.env['stock.picking'].create({
+            'picking_type_id': self.warehouse.out_type_id.id,
+            'location_id': self.stock_location.id,
+            'location_dest_id': self.pack_location.id,
+        })
+        move_values = {
             'name': 'The ship move',
-            'product_id': self.productA.id,
             'product_uom_qty': 5.0,
-            'product_uom': self.productA.uom_id.id,
             'location_id': self.stock_location.id,
             'location_dest_id': self.pack_location.id,
             'warehouse_id': self.warehouse.id,
-            'picking_type_id': self.warehouse.out_type_id.id,
-            'state': 'draft',
-        })
-        pick_move_b = self.env['stock.move'].create({
-            'name': 'The ship move',
-            'product_id': self.productB.id,
-            'product_uom_qty': 5.0,
-            'product_uom': self.productB.uom_id.id,
-            'location_id': self.stock_location.id,
-            'location_dest_id': self.pack_location.id,
-            'warehouse_id': self.warehouse.id,
-            'picking_type_id': self.warehouse.out_type_id.id,
-            'state': 'draft',
-        })
-        pick_move_a._assign_picking()
-        pick_move_b._assign_picking()
-        picking = pick_move_a.picking_id
+            'picking_id': picking.id,
+        }
+        pick_move_a = self.env['stock.move'].create([
+            {**move_values, 'product_id': self.productA.id, 'product_uom': self.productA.uom_id.id},
+            {**move_values, 'product_id': self.productB.id, 'product_uom': self.productB.uom_id.id},
+        ])[0]
         picking.action_confirm()
         picking.action_assign()
         picking.button_validate()
@@ -1936,6 +1928,36 @@ class TestPacking(TestPackingCommon):
         self.assertEqual(delivery.state, 'done')
         # check that the package is now in the Customer location
         self.assertEqual(pack.location_id, delivery.location_dest_id)
+
+    def test_unpick_move_after_pack_undone(self):
+        """
+        Ensure that stock moves are marked as not picked when a package level is undone.
+        """
+        self.warehouse.out_type_id.show_entire_packs = True
+        pack = self.env['stock.quant.package'].create({
+            'name': 'pack',
+        })
+        self.env['stock.quant']._update_available_quantity(self.productA, self.stock_location, 5, package_id=pack)
+        delivery = self.env['stock.picking'].create({
+            'picking_type_id': self.warehouse.out_type_id.id,
+            'location_id': self.stock_location.id,
+            'location_dest_id': self.ref('stock.stock_location_customers'),
+            'move_ids': [
+                Command.create({
+                    'name': self.productA.name,
+                    'product_id': self.productA.id,
+                    'product_uom_qty': 5,
+                    'product_uom': self.productA.uom_id.id,
+                    'location_id': self.stock_location.id,
+                    'location_dest_id': self.ref('stock.stock_location_customers'),
+                }),
+            ],
+        })
+        delivery.action_confirm()
+        delivery.package_level_ids.is_done = True
+        self.assertTrue(delivery.move_ids.picked)
+        delivery.package_level_ids.is_done = False
+        self.assertFalse(delivery.move_ids.picked)
 
 
 @odoo.tests.tagged('post_install', '-at_install')

@@ -146,6 +146,7 @@ SupplierParty = {
     'cbc:AdditionalAccountID': {},
     'cac:Party': Party,
     'cac:AccountingContact': Contact,
+    'cac:SellerContact': Contact,
 }
 
 CustomerParty = {
@@ -158,6 +159,7 @@ Delivery = {
     'cbc:ID': {},
     'cbc:ActualDeliveryDate': {},
     'cac:DeliveryLocation': {
+        'cbc:ID': {},
         'cac:Address': Address,
     },
     'cac:DeliveryParty': Party,
@@ -301,4 +303,16 @@ Price = {
 
 ItemPriceExtension = {
     'cbc:Amount': {},
+}
+
+ContractDocumentReference = {
+    'cbc:ID': {},
+}
+
+DespatchDocumentReference = {
+    'cbc:ID': {},
+}
+
+ProjectReference = {
+    'cbc:ID': {},
 }

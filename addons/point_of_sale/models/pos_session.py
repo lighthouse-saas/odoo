@@ -138,7 +138,7 @@ class PosSession(models.Model):
     def _load_pos_data_models(self, config_id):
         return ['pos.config', 'pos.order', 'pos.order.line', 'pos.pack.operation.lot', 'pos.payment', 'pos.payment.method', 'pos.printer',
                         'pos.category', 'pos.bill', 'res.company', 'account.tax', 'account.tax.group', 'product.product', 'product.template', 'product.template.attribute.line', 'product.attribute',
-            'product.attribute.custom.value', 'product.template.attribute.value', 'product.combo', 'product.combo.item', 'product.packaging', 'res.users', 'res.partner',
+            'product.attribute.custom.value', 'product.template.attribute.value', 'product.template.attribute.exclusion', 'product.combo', 'product.combo.item', 'product.packaging', 'res.users', 'res.partner',
             'decimal.precision', 'uom.uom', 'uom.category', 'res.country', 'res.country.state', 'res.lang', 'product.pricelist', 'product.pricelist.item', 'product.category',
             'account.cash.rounding', 'account.fiscal.position', 'account.fiscal.position.tax', 'stock.picking.type', 'res.currency', 'pos.note', 'ir.ui.view', 'product.tag', 'ir.module.module']
 
@@ -755,7 +755,7 @@ class PosSession(models.Model):
             session_destination_id = picking_type.default_location_dest_id.id
 
         for order in self._get_closed_orders():
-            if order.company_id.anglo_saxon_accounting and order.is_invoiced or order.shipping_date:
+            if order._force_create_picking_real_time() or order.shipping_date:
                 continue
             destination_id = order.partner_id.property_stock_customer.id or session_destination_id
             if destination_id in lines_grouped_by_dest_location:
@@ -972,6 +972,7 @@ class PosSession(models.Model):
                         .filtered(lambda m: not bool(m.origin_returned_move_id and sum(m.stock_valuation_layer_ids.mapped('quantity')) >= 0))\
                         .mapped('stock_valuation_layer_ids')
                     for move in stock_moves_batch.with_context(candidates_prefetch_ids=candidates._prefetch_ids):
+                        move = move.with_company(move.company_id)
                         exp_key = move.product_id._get_product_accounts()['expense']
                         out_key = move.product_id.categ_id.property_stock_account_output_categ_id
                         signed_product_qty = move.product_qty
@@ -1153,7 +1154,7 @@ class PosSession(models.Model):
 
         account_payment = self.env['account.payment'].create({
             'amount': abs(amounts['amount']),
-            'partner_id': payment.partner_id.id,
+            'partner_id': accounting_partner.id,
             'journal_id': payment_method.journal_id.id,
             'force_outstanding_account_id': outstanding_account.id,
             'destination_account_id': destination_account.id,
@@ -1672,17 +1673,18 @@ class PosSession(models.Model):
             return {}
         return self.config_id.open_ui()
 
-    def set_opening_control(self, cashbox_value: int, notes: str):
-        if self.state != 'opening_control':
-            return
+    def _set_opening_control_data(self, cashbox_value: int, notes: str):
+        """
+        Internal logic for opening the session.
+        Inherit this method to add custom logic before the sequence is assigned.
+        """
         self.state = 'opened'
         self.start_at = fields.Datetime.now()
-        if not self.rescue:
-            self.name = self.env['ir.sequence'].with_context(company_id=self.config_id.company_id.id).next_by_code('pos.session')
 
         cash_payment_method_ids = self.config_id.payment_method_ids.filtered(lambda pm: pm.is_cash_count)
-        if cash_payment_method_ids:
+        if notes:
             self.opening_notes = notes
+        if cash_payment_method_ids:
             difference = cashbox_value - self.cash_register_balance_start
             self._post_cash_details_message('Opening cash', self.cash_register_balance_start, difference, notes)
             self.cash_register_balance_start = cashbox_value
@@ -1691,10 +1693,34 @@ class PosSession(models.Model):
             message += notes
             self.message_post(body=plaintext2html(message))
 
+    def set_opening_control(self, cashbox_value: int, notes: str):
+        """
+        Public method to open the session.
+        This calls the internal logic and, if successful, assigns the sequence name.
+
+        DO NOT INHERIT THIS METHOD. Inherit _set_opening_control_data instead.
+        """
+        if self.state != 'opening_control':
+            return
+
+        self._set_opening_control_data(cashbox_value, notes)
+
+        if not self.rescue:
+            self.name = self.env['ir.sequence'].with_context(company_id=self.config_id.company_id.id).next_by_code('pos.session')
+
     def _post_cash_details_message(self, state, expected, difference, notes):
-        message = (state + " difference: " + self.currency_id.format(difference) + '\n' +
-           state + " expected: " + self.currency_id.format(expected) + '\n' +
-           state + " counted: " + self.currency_id.format(expected + difference) + '\n')
+        expected_formatted = self.currency_id.format(expected)
+        difference_formatted = self.currency_id.format(difference)
+        counted_formatted = self.currency_id.format(expected + difference)
+
+        if state == 'Opening cash':
+            message = _("Opening cash difference: %s \n", difference_formatted)
+            message += _("Opening cash expected: %s \n", expected_formatted)
+            message += _("Opening cash counted: %s \n", counted_formatted)
+        else:
+            message = _("Closing difference: %s \n", difference_formatted)
+            message += _("Closing expected: %s \n", expected_formatted)
+            message += _("Closing counted: %s \n", counted_formatted)
 
         if notes:
             message += _('Opening control message: ')
@@ -1837,7 +1863,7 @@ class PosSession(models.Model):
             ('sale_ok', '=', True),
             ('available_in_pos', '=', True),
         ])
-        if product:
+        if product and product[0].barcode == barcode:
             return {'product.product': product.with_context(product_context).read(product_fields, load=False)}
 
         domain = [('barcode', 'not in', ['', False])]
@@ -1891,9 +1917,9 @@ class PosSession(models.Model):
 
     def log_partner_message(self, partner_id, action, message_type):
         if message_type == 'ACTION_CANCELLED':
-            body = 'Action cancelled ({ACTION})'.format(ACTION=action)
+            body = _('Action cancelled (%(ACTION)s)', ACTION=action)
         elif message_type == 'CASH_DRAWER_ACTION':
-            body = 'Cash drawer opened ({ACTION})'.format(ACTION=action)
+            body = _('Cash drawer opened (%(ACTION)s)', ACTION=action)
 
         self.message_post(body=body, author_id=partner_id)
 
@@ -1909,6 +1935,19 @@ class PosSession(models.Model):
         session_info['nomenclature_id'] = self.company_id.nomenclature_id.id
         session_info['fallback_nomenclature_id'] = self._get_pos_fallback_nomenclature_id()
         return session_info
+
+    def _get_gc_sequence_prefix(self):
+        return ['pos.session.login_number']
+
+    @api.autovacuum
+    def _gc_session_sequences(self):
+        for prefix in self._get_gc_sequence_prefix():
+            sequences = self.env['ir.sequence'].search([('code', 'ilike', prefix)])
+            session_ids = [int(seq.code.split(prefix)[-1]) for seq in sequences if seq.code.split(prefix)[-1].isdigit()]
+            session_ids = self.env['pos.session'].search([('id', 'in', session_ids), ('state', '=', 'closed')]).ids
+            sequence_to_unlink_ids = sequences.filtered(lambda seq: seq.code in [f'{prefix}{session}' for session in session_ids])
+            if sequence_to_unlink_ids:
+                sequence_to_unlink_ids.sudo().unlink()
 
 
 class ProcurementGroup(models.Model):

@@ -263,3 +263,43 @@ registry.category("web_tour.tours").add("test_click_all_orders_keep_customer", {
             },
         ].flat(),
 });
+
+registry.category("web_tour.tours").add("test_ctrl_number_ignored", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            Dialog.confirm("Open Register"),
+            ProductScreen.addOrderline("Whiteboard Pen", "1", "6", "6.0"),
+            {
+                trigger: "body",
+                run: () => {
+                    window.dispatchEvent(new KeyboardEvent("keyup", { key: "5", ctrlKey: true }));
+                },
+            },
+            {
+                trigger: "body",
+                run: () =>
+                    new Promise((resolve) => {
+                        setTimeout(resolve, 300); // wait 300ms so NumberBuffer timeout runs
+                    }),
+            },
+            inLeftSide([
+                { ...ProductScreen.clickLine("Whiteboard Pen")[0], isActive: ["mobile"] },
+                ...ProductScreen.selectedOrderlineHasDirect("Whiteboard Pen", "1", "6.0"),
+            ]),
+        ].flat(),
+});
+
+registry.category("web_tour.tours").add("test_set_opening_note_without_cash_method", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            {
+                content: "Add Opening Notes",
+                trigger: ".opening-notes",
+                run: "edit Opening Notes",
+            },
+            Dialog.confirm("Open Register"),
+            Chrome.waitRequest(),
+        ].flat(),
+});
