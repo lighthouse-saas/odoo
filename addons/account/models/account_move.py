@@ -1384,6 +1384,7 @@ class AccountMove(models.Model):
             domain = [
                 ('account_id', 'in', pay_term_lines.account_id.ids),
                 ('parent_state', '=', 'posted'),
+                *move._check_company_domain(move.company_id),
                 ('partner_id', '=', move.commercial_partner_id.id),
                 ('reconciled', '=', False),
                 '|', ('amount_residual', '!=', 0.0), ('amount_residual_currency', '!=', 0.0),
@@ -3006,6 +3007,7 @@ class AccountMove(models.Model):
 
         to_delete = []
         to_create = []
+        grouped_update = defaultdict(set)
         for move in container['records']:
             if move.state != 'draft':
                 continue
@@ -3065,7 +3067,7 @@ class AccountMove(models.Model):
             for base_line, to_update in tax_results['base_lines_to_update']:
                 line = base_line['record']
                 if is_write_needed(line, to_update):
-                    line.write(to_update)
+                    grouped_update[line.currency_id.id, frozendict(to_update)].add(line.id)
 
             for tax_line_vals in tax_results['tax_lines_to_delete']:
                 to_delete.append(tax_line_vals['record'].id)
@@ -3080,8 +3082,12 @@ class AccountMove(models.Model):
             for tax_line_vals, grouping_key, to_update in tax_results['tax_lines_to_update']:
                 line = tax_line_vals['record']
                 if is_write_needed(line, to_update):
-                    line.write(to_update)
+                    grouped_update[line.currency_id.id, frozendict(to_update)].add(line.id)
 
+        if grouped_update:
+            # Need to use currency_id as a key to avoid writing with multiple currencies
+            for (currency_id, values), lines in grouped_update.items():
+                self.env['account.move.line'].browse(lines).write(dict(values))
         if to_delete:
             self.env['account.move.line'].browse(to_delete).with_context(dynamic_unlink=True).unlink()
         if to_create:
@@ -3202,9 +3208,13 @@ class AccountMove(models.Model):
         yield
         after = existing()
 
+        partner_id_to_update = defaultdict(set)
         for move in after:
             if changed('commercial_partner_id'):
-                move.line_ids.partner_id = after[move]['commercial_partner_id']
+                partner_id_to_update[after[move]['commercial_partner_id']].update(move.line_ids.ids)
+
+        for partner_id, line_ids in partner_id_to_update.items():
+            self.env['account.move.line'].browse(line_ids).partner_id = partner_id
 
     @contextmanager
     def _sync_dynamic_lines(self, container):
@@ -5271,7 +5281,7 @@ class AccountMove(models.Model):
 
     def _link_bill_origin_to_purchase_orders(self, timeout=10):
         for move in self.filtered(lambda m: m.move_type in self.get_purchase_types()):
-            references = [ref.strip() for ref in move.invoice_origin.split(',')] if move.invoice_origin else []
+            references = [ref.strip() for ref in move.invoice_origin.split(',') if ref.strip()] if move.invoice_origin else []
             move._find_and_set_purchase_orders(references, move.partner_id.id, move.amount_total, timeout=timeout)
         return self
 
@@ -6166,7 +6176,13 @@ class AccountMove(models.Model):
     def _get_invoice_report_filename(self, extension='pdf'):
         """ Get the filename of the generated invoice report with extension file. """
         self.ensure_one()
-        report_id = self.partner_id.invoice_template_pdf_report_id or self.env.ref('account.account_invoices')
+        report_id = (
+            self.env.context.get('invoice_report')
+            or self.partner_id.invoice_template_pdf_report_id
+            or self.env.ref('account.account_invoices')
+        )
+        if not report_id.print_report_name:
+            return False
         file_name = safe_eval(report_id.print_report_name, {'object': self})
         return f"{file_name.replace('/', '_')}.{extension}"
 
@@ -6475,17 +6491,17 @@ class AccountMove(models.Model):
             force_email_company=force_email_company, force_email_lang=force_email_lang
         )
         record = render_context['record']
-        subtitles = [f"{record.name} - {record.partner_id.name}" if record.partner_id.name else record.name]
+        subtitles = [f"{record.display_name} - {record.partner_id.name}" if record.partner_id.name else record.display_name]
         if self.is_invoice(include_receipts=True):
             # Only show the amount in emails for non-miscellaneous moves. It might confuse recipients otherwise.
             if self.invoice_date_due and self.payment_state not in ('in_payment', 'paid'):
                 subtitles.append(_(
                     '%(amount)s due\N{NO-BREAK SPACE}%(date)s',
-                    amount=format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')),
+                    amount=format_amount(self.env, self.amount_total or self.tax_totals.get('total_amount_currency', 0), self.currency_id, lang_code=render_context.get('lang')),
                     date=format_date(self.env, self.invoice_date_due, lang_code=render_context.get('lang')),
                 ))
             else:
-                subtitles.append(format_amount(self.env, self.amount_total, self.currency_id, lang_code=render_context.get('lang')))
+                subtitles.append(format_amount(self.env, self.amount_total or self.tax_totals.get('total_amount_currency', 0), self.currency_id, lang_code=render_context.get('lang')))
         render_context['subtitles'] = subtitles
         return render_context
 
