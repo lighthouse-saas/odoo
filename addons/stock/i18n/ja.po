@@ -16,7 +16,7 @@ msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-10 18:37+0000\n"
-"PO-Revision-Date: 2026-05-02 09:08+0000\n"
+"PO-Revision-Date: 2026-06-06 11:17+0000\n"
 "Last-Translator: \"Junko Augias (juau)\" <juau@odoo.com>\n"
 "Language-Team: Japanese <https://translate.odoo.com/projects/odoo-18/stock/"
 "ja/>\n"
@@ -25,7 +25,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.17\n"
+"X-Generator: Weblate 2026.6.1\n"
 
 #. module: stock
 #. odoo-python
@@ -3739,7 +3739,7 @@ msgstr "自由に使用できる数量"
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.product_product_stock_tree
 msgid "Free to Use"
-msgstr "引当なし"
+msgstr "利用可能"
 
 #. module: stock
 #. odoo-javascript
@@ -4966,7 +4966,7 @@ msgstr "遅延"
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.view_picking_internal_search
 msgid "Late Activities"
-msgstr "遅れた活動"
+msgstr "期限超過の活動"
 
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.view_picking_internal_search
@@ -5880,7 +5880,7 @@ msgstr "利用不可"
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.stock_reorder_report_search
 msgid "Not Snoozed"
-msgstr "一時停止されていない"
+msgstr "一時保留なし"
 
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.view_picking_form
@@ -6709,7 +6709,7 @@ msgstr "少なくとも1つ、ゼロではない量を指定してください�
 #. odoo-javascript
 #: code:addons/stock/static/src/widgets/stock_rescheduling_popover.xml:0
 msgid "Preceding operations"
-msgstr "先行操作"
+msgstr "先行オペレーション"
 
 #. module: stock
 #: model:ir.model.fields,field_description:stock.field_product_replenish__route_id
@@ -9949,7 +9949,7 @@ msgstr "今日"
 #. module: stock
 #: model_terms:ir.ui.view,arch_db:stock.view_picking_internal_search
 msgid "Today Activities"
-msgstr "本日の活動"
+msgstr "今日の活動"
 
 #. module: stock
 #. odoo-python
@@ -11121,8 +11121,7 @@ msgstr "すでに使用されているプロダクトの在庫追跡を変更す
 #. odoo-python
 #: code:addons/stock/models/stock_orderpoint.py:0
 msgid "You can not create a snoozed orderpoint that is not manually triggered."
-msgstr ""
-"手動トリガでない補充ルールに対しては、一時停止を設定することはできません。"
+msgstr "手動トリガでない補充ルールに対しては、一時保留を設定することはできません。"
 
 #. module: stock
 #. odoo-python
@@ -11184,8 +11183,8 @@ msgid ""
 "You can only snooze manual orderpoints. You should rather archive 'auto-"
 "trigger' orderpoints if you do not want them to be triggered."
 msgstr ""
-"一時停止できるのは手動の補充ルールのみです。「自動でトリガー」される補充ルー"
-"ルを無効にしたい場合は、アーカイブすることをおすすめします。"
+"一時保留できるのは手動の補充ルールのみです。「自動でトリガー」される補充"
+"ルールを無効にしたい場合は、アーカイブすることをおすすめします。"
 
 #. module: stock
 #. odoo-python

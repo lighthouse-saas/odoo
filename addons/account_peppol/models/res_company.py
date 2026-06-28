@@ -6,6 +6,7 @@ from stdnum import get_cc_module, ean
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.addons.account.models.company import PEPPOL_LIST
+from odoo.addons.account_edi_ubl_cii.models.account_edi_common import EAS_MAPPING
 
 try:
     import phonenumbers
@@ -150,6 +151,13 @@ class ResCompany(models.Model):
 
         return True if (endpoint_rule := peppol_dict.get(self.peppol_eas)) is None else endpoint_rule(self.peppol_endpoint)
 
+    def _peppol_is_french_company(self):
+        self.ensure_one()
+        return (
+            self.account_fiscal_country_id.code in {'FR', 'GP', 'MQ', 'RE'}
+            or self.peppol_eas in EAS_MAPPING['FR']
+        )
+
     # -------------------------------------------------------------------------
     # CONSTRAINTS
     # -------------------------------------------------------------------------
@@ -181,7 +189,9 @@ class ResCompany(models.Model):
     @api.depends('account_edi_proxy_client_ids')
     def _compute_account_peppol_edi_user(self):
         for company in self:
-            company.account_peppol_edi_user = company.account_edi_proxy_client_ids.filtered(lambda u: u.proxy_type == 'peppol')
+            company.account_peppol_edi_user = company.account_edi_proxy_client_ids.filtered(
+                lambda u: u.proxy_type in self.env['account_edi_proxy_client.user']._get_peppol_proxy_types()
+            )
 
     @api.depends('peppol_eas', 'peppol_endpoint')
     def _compute_peppol_parent_company_id(self):
@@ -332,6 +342,13 @@ class ResCompany(models.Model):
         self.ensure_one()
         config_param = self.env['ir.config_parameter'].sudo().get_param('account_peppol.edi.mode')
         # by design, we can only have zero or one proxy user per company with type Peppol
-        peppol_user = self.sudo().account_edi_proxy_client_ids.filtered(lambda u: u.proxy_type == 'peppol')
+        peppol_user = self.sudo().account_edi_proxy_client_ids.filtered(lambda u: u.proxy_type in self.env['account_edi_proxy_client.user']._get_peppol_proxy_types())
         demo_if_demo_identifier = 'demo' if self.peppol_eas == 'odemo' else False
         return demo_if_demo_identifier or peppol_user.edi_mode or config_param or 'prod'
+
+    def _get_peppol_proxy_type(self):
+        self.ensure_one()
+        peppol_user = self.sudo().account_edi_proxy_client_ids.filtered(
+            lambda u: u.proxy_type in self.env['account_edi_proxy_client.user']._get_peppol_proxy_types()
+        )
+        return peppol_user.proxy_type or 'peppol'

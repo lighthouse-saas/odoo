@@ -629,8 +629,12 @@ export class PosStore extends Reactive {
         const attributeLinesValues = attributeLines.map((attr) => attr.product_template_value_ids);
         if (attributeLinesValues.some((values) => values.length > 1 || values[0].is_custom)) {
             let defaultValues = {};
-            const match = product.barcode && product.barcode.includes(this.searchProductWord);
-            if (this.searchProductWord && match) {
+            const searchMatch =
+                this.searchProductWord &&
+                product.barcode &&
+                product.barcode.includes(this.searchProductWord);
+            const scanMatche = opts.code && product.barcode === opts.code.base_code;
+            if (searchMatch || scanMatche) {
                 defaultValues = Object.fromEntries(
                     product.product_template_variant_value_ids.map((value) => [
                         value.attribute_line_id.id,
@@ -1757,7 +1761,7 @@ export class PosStore extends Reactive {
                 );
                 changes.new = [];
                 if (!printed) {
-                    unsuccedPrints.push("Detailed Receipt");
+                    unsuccedPrints.push(_t("Detailed Receipt"));
                 } else {
                     isPrinted = true;
                 }
@@ -1777,7 +1781,7 @@ export class PosStore extends Reactive {
             if (orderChange.generalNote && anyChangesToPrint) {
                 const printed = await this.printReceipts(order, printer, "Message", []);
                 if (!printed) {
-                    unsuccedPrints.push("General Message");
+                    unsuccedPrints.push(_t("General Message"));
                 } else {
                     isPrinted = true;
                 }

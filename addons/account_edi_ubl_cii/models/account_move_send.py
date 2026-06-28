@@ -6,7 +6,7 @@ from lxml import etree
 from xml.sax.saxutils import escape, quoteattr
 
 from odoo import _, api, fields, models, tools, SUPERUSER_ID
-from odoo.addons.account_edi_ubl_cii.models.account_edi_common import SUPPORTED_FILE_TYPES
+from odoo.addons.account.models.ir_attachment import SUPPORTED_FILE_TYPES
 from odoo.tools import cleanup_xml_node
 from odoo.tools.pdf import OdooPdfFileReader, OdooPdfFileWriter
 
@@ -179,11 +179,7 @@ class AccountMoveSend(models.AbstractModel):
         writer = OdooPdfFileWriter()
         writer.cloneReaderDocumentRoot(reader)
 
-        attachment_name = 'factur-x.xml'
-        if invoice.commercial_partner_id.country_code == 'DE' and invoice.commercial_partner_id.peppol_eas != '0204':
-            attachment_name = 'zugferd-invoice.xml'
-
-        writer.addAttachment(attachment_name, xml_facturx, subtype='text/xml')
+        writer.addAttachment('factur-x.xml', xml_facturx, subtype='text/xml', afrelationship='/Alternative')
 
         # PDF-A.
         if ((invoice_data.get('ubl_cii_xml_options', {}).get('ubl_cii_format') in ('facturx', 'zugferd')
@@ -259,6 +255,8 @@ class AccountMoveSend(models.AbstractModel):
         })
 
         for attachment_values in attachments_to_embed:
+            # Some XML validator need a strict embed content without ligne break and whitespace
+            embed_content = base64.b64encode(attachment_values['raw']).decode()
             to_inject = f'''
                 <cac:AdditionalDocumentReference
                     {attachment_values.get("xmlns", "")}
@@ -269,9 +267,7 @@ class AccountMoveSend(models.AbstractModel):
                     <cac:Attachment>
                         <cbc:EmbeddedDocumentBinaryObject
                             mimeCode={quoteattr(attachment_values["mimetype"])}
-                            filename={quoteattr(attachment_values['filename'])}>
-                            {base64.b64encode(attachment_values['raw']).decode()}
-                        </cbc:EmbeddedDocumentBinaryObject>
+                            filename={quoteattr(attachment_values['filename'])}>{embed_content}</cbc:EmbeddedDocumentBinaryObject>
                     </cac:Attachment>
                 </cac:AdditionalDocumentReference>
             '''
