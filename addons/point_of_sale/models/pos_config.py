@@ -217,7 +217,7 @@ class PosConfig(models.Model):
 
         for model, ids in records.items():
             fields = self.env[model]._load_pos_data_fields(self.id)
-            static_records[model] = self.env[model].browse(ids).read(fields, load=False)
+            static_records[model] = self.env[model].with_context(display_default_code=False).browse(ids).read(fields, load=False)
 
         self._notify('SYNCHRONISATION', {
             'static_records': static_records,
@@ -1146,7 +1146,7 @@ class PosConfig(models.Model):
         return {
             "has_pos_config": has_pos_config,
             "has_chart_template": has_chart_template,
-            "is_restaurant_installed": bool(self.env['ir.module.module'].search_count([('name', '=', 'pos_restaurant'), ('state', '=', 'installed')])),
+            "is_restaurant_installed": bool(self.env['ir.module.module'].sudo().search_count([('name', '=', 'pos_restaurant'), ('state', '=', 'installed')])),
             "is_main_company": main_company and self.env.company.id == main_company.id or False
         }
 
